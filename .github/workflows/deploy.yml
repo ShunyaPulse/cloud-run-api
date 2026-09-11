@@ -1,8 +1,8 @@
 # ══════════════════════════════════════════════════════════════════════
-#  CI/CD Pipeline — Build & Push to GitHub Container Registry (GHCR)
+#  CI/CD Pipeline — Build, Push to GHCR & Deploy to Google Cloud Run
 # ══════════════════════════════════════════════════════════════════════
 
-name: Build & Push to GHCR
+name: Build & Deploy to Cloud Run
 
 on:
   push:
@@ -16,18 +16,20 @@ env:
   REGISTRY: ghcr.io
   # Image name = ghcr.io/<owner>/<repo> (auto-derived from repository)
   IMAGE_NAME: ${{ github.repository }}
+  SERVICE_NAME: cloud-run-app
+  REGION: asia-south1
 
 jobs:
-  build-and-push:
-    name: Build & Push Container Image
+  build-and-deploy:
+    name: Build, Push & Deploy
     runs-on: ubuntu-latest
 
     steps:
-      # ── Checkout source code ────────────────────────────────────────
+      # ── 1. Checkout source code ─────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── Authenticate to GHCR ────────────────────────────────────────
+      # ── 2. Authenticate to GHCR ─────────────────────────────────────────
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -35,7 +37,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── Extract metadata (tags, labels) ─────────────────────────────
+      # ── 3. Extract metadata (tags, labels) ──────────────────────────────
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -45,7 +47,7 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=,format=long
 
-      # ── Build & Push image ──────────────────────────────────────────
+      # ── 4. Build & Push image ───────────────────────────────────────────
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
@@ -53,15 +55,37 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Layer caching for faster CI builds
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-to: type=inline
 
-      # ── Print image info ────────────────────────────────────────────
-      - name: Print image details
-        run: |
-          echo "══════════════════════════════════════════════════════"
-          echo "  ✔ Image pushed to GHCR"
-          echo "  Tags:"
-          echo "${{ steps.meta.outputs.tags }}" | sed 's/^/    /'
-          echo "══════════════════════════════════════════════════════"
+      # ── 5. Authenticate to Google Cloud ──────────────────────────────────
+      # Requires GCP_CREDENTIALS secret in GitHub (Service Account JSON)
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      # ── 6. Deploy to Cloud Run ───────────────────────────────────────────
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          flags: |
+            --platform=managed
+            --allow-unauthenticated
+            --min-instances=0
+            --max-instances=2
+            --port=8080
+            --memory=256Mi
+            --cpu=1
+          env_vars: |
+            NODE_ENV=production
+          secrets: |
+            DATABASE_URL=DATABASE_URL:latest
+
+      # ── 7. Print Output ──────────────────────────────────────────────────
+      - name: Show Output
+        run: echo "Deployed Service URL -> ${{ steps.deploy.outputs.url }}"
