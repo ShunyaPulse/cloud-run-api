@@ -12,11 +12,17 @@
   },
   "dependencies": {
     "express": "^4.21.2",
+    "ioredis": "^6.0.0",
     "pg": "^8.13.1"
   },
   "devDependencies": {
     "dotenv": "^16.4.7"
   },
-  "keywords": ["cloud-run", "express", "neon", "postgres"],
+  "keywords": [
+    "cloud-run",
+    "express",
+    "neon",
+    "postgres"
+  ],
   "license": "MIT"
 }
