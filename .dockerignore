@@ -18,10 +18,11 @@ Dockerfile
 .dockerignore
 docker-compose*.yml
 
-# ─── CI/CD & Docs ────────────────────────────────────────────────────
+# ─── CI/CD, Docs & External Infra ────────────────────────────────────
 .github
 *.md
 LICENSE
+oci/
 
 # ─── IDE & OS ─────────────────────────────────────────────────────────
 .vscode
