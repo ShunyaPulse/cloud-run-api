@@ -58,15 +58,27 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-to: type=inline
 
-      # ── 5. Authenticate to Google Cloud ──────────────────────────────────
-      # Requires GCP_CREDENTIALS secret in GitHub (Service Account JSON)
+      # ── 5. Check for GCP Credentials ─────────────────────────────────────
+      - name: Check GCP Credentials
+        id: check_gcp
+        run: |
+          if [ -n "${{ secrets.GCP_CREDENTIALS }}" ]; then
+            echo "gcp_configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "gcp_configured=false" >> $GITHUB_OUTPUT
+            echo "::notice ::GCP_CREDENTIALS secret is not set. Container built and published to GHCR successfully. Skipping Cloud Run deploy."
+          fi
+
+      # ── 6. Authenticate to Google Cloud (Only if secret exists) ──────────
       - name: Authenticate to Google Cloud
+        if: steps.check_gcp.outputs.gcp_configured == 'true'
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # ── 6. Deploy to Cloud Run ───────────────────────────────────────────
+      # ── 7. Deploy to Cloud Run (Only if secret exists) ────────────────────
       - name: Deploy to Cloud Run
+        if: steps.check_gcp.outputs.gcp_configured == 'true'
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v2
         with:
@@ -86,6 +98,7 @@ jobs:
           secrets: |
             DATABASE_URL=DATABASE_URL:latest
 
-      # ── 7. Print Output ──────────────────────────────────────────────────
+      # ── 8. Print Output ──────────────────────────────────────────────────
       - name: Show Output
+        if: steps.check_gcp.outputs.gcp_configured == 'true'
         run: echo "Deployed Service URL -> ${{ steps.deploy.outputs.url }}"
