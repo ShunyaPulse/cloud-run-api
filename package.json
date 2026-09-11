@@ -1,0 +1,22 @@
+{
+  "name": "cloud-run-app",
+  "version": "1.0.0",
+  "description": "Production-grade Express API deployed on Google Cloud Run with Neon Serverless Postgres",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.7"
+  },
+  "keywords": ["cloud-run", "express", "neon", "postgres"],
+  "license": "MIT"
+}

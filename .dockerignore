@@ -1,0 +1,39 @@
+# ─── Dependency & Build Artifacts ─────────────────────────────────────
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── Version Control ─────────────────────────────────────────────────
+.git
+.gitignore
+
+# ─── Environment Secrets ─────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Docker Meta (prevent recursive context) ─────────────────────────
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# ─── CI/CD & Docs ────────────────────────────────────────────────────
+.github
+*.md
+LICENSE
+
+# ─── IDE & OS ─────────────────────────────────────────────────────────
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ─── Test & Coverage ─────────────────────────────────────────────────
+coverage
+.nyc_output
+__tests__
+*.test.js
+*.spec.js
